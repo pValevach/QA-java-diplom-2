@@ -6,7 +6,6 @@ import pojo.User;
 import pojo.UserCredentials;
 
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
-import static org.apache.http.HttpStatus.SC_OK;
 
 public class UserClient extends RestClient {
 
@@ -33,7 +32,7 @@ public class UserClient extends RestClient {
                 .then().log().all();
     }
 
-    @Step("Send DELETE request to api/auth/user w/ accessToken and save response")
+    @Step("Send DELETE request to api/auth/user w/ accessToken and check 202 status code from response")
     public void deleteUserBy(String token) {
         reqSpec
                 .auth().oauth2(getPureTokenFrom(token))
