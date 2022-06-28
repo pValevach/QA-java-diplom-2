@@ -11,25 +11,25 @@ import pojo.User;
 import pojo.UserCredentials;
 
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 
 public class UserLoginTest {
-    private UserClient userClient;
-    private UserCredentials credentials;
-    private User user;
 
+    private User user;
+    private UserCredentials credentials;
+    private RestClient restClient;
+    private UserClient userClient;
     private String accessToken;
     private String expectedResponse;
     private String actualResponse;
-
     private ValidatableResponse loginResponse;
 
     @Before
     public void setup() {
+        restClient = new RestClient();
         userClient = new UserClient();
 
         user = User.getRandom();
-        accessToken = getAccessTokenFrom(userClient.register(user)
+        accessToken = userClient.getAccessTokenFrom(userClient.register(user)
                 .assertThat()
                 .statusCode(SC_OK));
     }
@@ -45,7 +45,7 @@ public class UserLoginTest {
         credentials = UserCredentials.getCredsFrom(user);
         loginResponse = userClient.loginBy(credentials);
 
-        Assert.assertTrue(isLoginResponseOkFrom(loginResponse));
+        Assert.assertTrue(restClient.isStatusCodeOkFrom(loginResponse));
     }
 
     @Test
@@ -55,7 +55,7 @@ public class UserLoginTest {
         loginResponse = userClient.loginBy(credentials);
 
         expectedResponse = "email or password are incorrect";
-        actualResponse = getLoginErrorFrom(loginResponse);
+        actualResponse = restClient.getUnauthorizedErrorFrom(loginResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
     }
@@ -67,33 +67,8 @@ public class UserLoginTest {
         loginResponse = userClient.loginBy(credentials);
 
         expectedResponse = "email or password are incorrect";
-        actualResponse = getLoginErrorFrom(loginResponse);
+        actualResponse = restClient.getUnauthorizedErrorFrom(loginResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
-    }
-
-    @Step("Get accessToken")
-    public String getAccessTokenFrom(ValidatableResponse response) {
-        return response
-                .extract()
-                .path("accessToken");
-    }
-
-    @Step("Checking for 200 status code and saving 'success' field from login response")
-    public boolean isLoginResponseOkFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_OK)
-                .extract()
-                .path("success");
-    }
-
-    @Step("Checking for 401 status code and saving 'message' field from login response")
-    public String getLoginErrorFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_UNAUTHORIZED)
-                .extract()
-                .path("message");
     }
 }

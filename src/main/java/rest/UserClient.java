@@ -14,6 +14,13 @@ public class UserClient extends RestClient {
     private final String LOGIN = ROOT + "/login";
     private final String USER = ROOT + "/user";
 
+    @Step("Get accessToken")
+    public String getAccessTokenFrom(ValidatableResponse response) {
+        return response
+                .extract()
+                .path("accessToken");
+    }
+
     @Step("Send POST request to api/auth/register and save response")
     public ValidatableResponse register(User user) {
         return reqSpec

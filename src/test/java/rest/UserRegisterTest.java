@@ -1,6 +1,5 @@
 package rest;
 
-import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.After;
@@ -9,22 +8,20 @@ import org.junit.Before;
 import org.junit.Test;
 import pojo.User;
 
-import static org.apache.http.HttpStatus.SC_FORBIDDEN;
-import static org.apache.http.HttpStatus.SC_OK;
-
 public class UserRegisterTest {
-    private UserClient userClient;
-    private User user;
 
+    private User user;
+    private RestClient restClient;
+    private UserClient userClient;
     private String accessToken;
     private String expectedResponse;
     private String actualResponse;
     private boolean isUserCreated;
-
     private ValidatableResponse registerResponse;
 
     @Before
     public void setup() {
+        restClient = new RestClient();
         userClient = new UserClient();
     }
 
@@ -41,9 +38,9 @@ public class UserRegisterTest {
         user = User.getRandom();
 
         registerResponse = userClient.register(user);
-        accessToken = getAccessTokenFrom(registerResponse);
+        accessToken = userClient.getAccessTokenFrom(registerResponse);
 
-        isUserCreated = isRegisterResponseOkFrom(registerResponse);
+        isUserCreated = restClient.isStatusCodeOkFrom(registerResponse);
 
         Assert.assertTrue(isUserCreated);
     }
@@ -56,13 +53,13 @@ public class UserRegisterTest {
 
         //First register
         registerResponse = userClient.register(user);
-        isUserCreated = isRegisterResponseOkFrom(registerResponse);
-        accessToken = getAccessTokenFrom(registerResponse);
+        isUserCreated = restClient.isStatusCodeOkFrom(registerResponse);
+        accessToken = userClient.getAccessTokenFrom(registerResponse);
         //Second register w/ the same user
         registerResponse = userClient.register(user);
 
         expectedResponse = "User already exists";
-        actualResponse = getRegisterErrorFrom(registerResponse);
+        actualResponse = restClient.getForbiddenErrorFrom(registerResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
     }
@@ -75,7 +72,7 @@ public class UserRegisterTest {
         registerResponse = userClient.register(user);
 
         expectedResponse = "Email, password and name are required fields";
-        actualResponse = getRegisterErrorFrom(registerResponse);
+        actualResponse = restClient.getForbiddenErrorFrom(registerResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
     }
@@ -88,7 +85,7 @@ public class UserRegisterTest {
         registerResponse = userClient.register(user);
 
         expectedResponse = "Email, password and name are required fields";
-        actualResponse = getRegisterErrorFrom(registerResponse);
+        actualResponse = restClient.getForbiddenErrorFrom(registerResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
     }
@@ -101,34 +98,9 @@ public class UserRegisterTest {
         registerResponse = userClient.register(user);
 
         expectedResponse = "Email, password and name are required fields";
-        actualResponse = getRegisterErrorFrom(registerResponse);
+        actualResponse = restClient.getForbiddenErrorFrom(registerResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
-    }
-
-    @Step("Get accessToken")
-    public String getAccessTokenFrom(ValidatableResponse response) {
-        return response
-                .extract()
-                .path("accessToken");
-    }
-
-    @Step("Checking for 200 status code and saving 'success' field from register response")
-    public boolean isRegisterResponseOkFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_OK)
-                .extract()
-                .path("success");
-    }
-
-    @Step("Checking for 403 status code and saving 'message' field from register response")
-    public String getRegisterErrorFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_FORBIDDEN)
-                .extract()
-                .path("message");
     }
 }
 

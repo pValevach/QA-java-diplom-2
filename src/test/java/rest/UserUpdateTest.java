@@ -13,22 +13,22 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 
 public class UserUpdateTest {
-    private UserClient userClient;
-    private User user;
+
     private User userEdited;
-
+    private RestClient restClient;
+    private UserClient userClient;
     private String accessToken;
-
     private ValidatableResponse updateResponse;
 
     @Before
     public void setup() {
+        restClient = new RestClient();
         userClient = new UserClient();
 
-        user = User.getRandom();
+        User user = User.getRandom();
         userEdited = User.getRandom();
 
-        accessToken = getAccessTokenFrom(userClient.register(user)
+        accessToken = userClient.getAccessTokenFrom(userClient.register(user)
                 .assertThat()
                 .statusCode(SC_OK));
     }
@@ -43,7 +43,7 @@ public class UserUpdateTest {
     public void edit_w_Auth() {
         updateResponse = userClient.updateUser_w_Auth(userEdited, accessToken);
 
-        Assert.assertTrue(isUpdateResponseOkFrom(updateResponse));
+        Assert.assertTrue(restClient.isStatusCodeOkFrom(updateResponse));
     }
 
     @Test
@@ -51,27 +51,11 @@ public class UserUpdateTest {
     public void edit_wo_Auth() {
         updateResponse = userClient.updateUser_wo_Auth(userEdited);
 
-        Assert.assertFalse(isUpdateResponseFailureFrom((updateResponse)));
+        Assert.assertFalse(isUnauthorizedErrorFrom((updateResponse)));
     }
 
-    @Step("Get accessToken")
-    public String getAccessTokenFrom(ValidatableResponse response) {
-        return response
-                .extract()
-                .path("accessToken");
-    }
-
-    @Step("Checking for 200 status code and saving 'success' field from update response")
-    public boolean isUpdateResponseOkFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_OK)
-                .extract()
-                .path("success");
-    }
-
-    @Step("Checking for 401 status code and saving 'success' field from update response")
-    public boolean isUpdateResponseFailureFrom(ValidatableResponse response) {
+    @Step("Checking for 401 status code and saving 'success' field from response")
+    public boolean isUnauthorizedErrorFrom(ValidatableResponse response) {
         return response
                 .assertThat()
                 .statusCode(SC_UNAUTHORIZED)

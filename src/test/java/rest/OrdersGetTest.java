@@ -12,23 +12,22 @@ import pojo.User;
 import static org.apache.http.HttpStatus.*;
 
 public class OrdersGetTest {
+
+    private RestClient restClient;
     private UserClient userClient;
     private OrdersClient ordersClient;
-
     private String accessToken;
-    private String expectedResponse;
-    private String actualResponse;
-
     private ValidatableResponse orderResponse;
 
     @Before
     public void setup() {
+        restClient = new RestClient();
         userClient = new UserClient();
         ordersClient = new OrdersClient();
 
         User user = User.getRandom();
 
-        accessToken = getAccessTokenFrom(userClient.register(user)
+        accessToken = userClient.getAccessTokenFrom(userClient.register(user)
                 .assertThat()
                 .statusCode(SC_OK));
     }
@@ -43,7 +42,7 @@ public class OrdersGetTest {
     public void get_w_Auth() {
         orderResponse = ordersClient.getOrders_w_Auth(accessToken);
 
-        Assert.assertTrue(isGetOrdersResponseOkFrom(orderResponse));
+        Assert.assertTrue(restClient.isStatusCodeOkFrom(orderResponse));
     }
 
     @Test
@@ -51,34 +50,9 @@ public class OrdersGetTest {
     public void get_wo_Auth() {
         orderResponse = ordersClient.getOrders_wo_Auth();
 
-        expectedResponse = "You should be authorised";
-        actualResponse = getUnauthErrorFrom(orderResponse);
+        String expectedResponse = "You should be authorised";
+        String actualResponse = restClient.getUnauthorizedErrorFrom(orderResponse);
 
         Assert.assertEquals(expectedResponse, actualResponse);
-    }
-
-    @Step("Get accessToken")
-    public String getAccessTokenFrom(ValidatableResponse response) {
-        return response
-                .extract()
-                .path("accessToken");
-    }
-
-    @Step("Checking for 200 status code and saving 'success' field from get response")
-    public boolean isGetOrdersResponseOkFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_OK)
-                .extract()
-                .path("success");
-    }
-
-    @Step("Checking for 401 status code and saving 'message' field from get response")
-    public String getUnauthErrorFrom(ValidatableResponse response) {
-        return response
-                .assertThat()
-                .statusCode(SC_UNAUTHORIZED)
-                .extract()
-                .path("message");
     }
 }
